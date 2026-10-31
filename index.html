@@ -351,9 +351,50 @@
             box-shadow: 0 2px 0px var(--line-brown);
             transform: translateY(1px);
         }
+
+        /* 階段 A 新增：手機底部浮動 App 導覽列 */
+        .mobile-bottom-nav {
+            background: rgba(255, 253, 249, 0.96);
+            backdrop-filter: blur(8px);
+            border: 2.4px solid var(--line-brown);
+            border-radius: 999px;
+            box-shadow: 0 6px 0px #DFD5C6, 0 10px 25px rgba(92, 73, 56, 0.14);
+        }
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 900;
+            color: #857262;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+        .mobile-nav-item.active {
+            background-color: var(--pastel-yellow);
+            color: var(--line-brown);
+            border: 1.8px solid var(--line-brown);
+            transform: translateY(-3px);
+            box-shadow: 0 3px 0px var(--line-brown);
+        }
+
+        /* 蝦米幣跳動獲得動畫 */
+        @keyframes coinFloatUp {
+            0% { transform: translateY(8px) scale(0.8); opacity: 0; }
+            25% { transform: translateY(-6px) scale(1.1); opacity: 1; }
+            80% { transform: translateY(-18px) scale(1); opacity: 1; }
+            100% { transform: translateY(-26px) scale(0.9); opacity: 0; }
+        }
+        .coin-float-anim {
+            animation: coinFloatUp 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
     </style>
 </head>
-<body class="relative py-6 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+<body class="relative pt-5 pb-28 sm:py-6 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
 
     <!-- 背景小配角：炸蝦麵衣小屑屑與呆呆小粉圓/米粒 -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none z-0 opacity-60">
@@ -514,18 +555,66 @@
                     </div>
                 </div>
 
-                <!-- 右側：線上試算表同步狀態與使用者定位按鈕 -->
-                <div class="flex flex-col sm:items-end gap-2 self-stretch sm:self-auto">
-                    <div id="sync-status" class="sumikko-card-sm px-4 py-2 bg-[#FFF9E6] flex items-center gap-2.5 text-xs sm:text-sm font-bold justify-center">
-                        <svg class="w-5 h-5 animate-spin text-[#F7A072]" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="9" stroke="#5C4938" stroke-width="2.2" stroke-dasharray="28 14" stroke-linecap="round"/>
-                        </svg>
-                        <span id="sync-text">阿蝦與米米正在搬運菜單...</span>
+                <!-- 右側：酥脆蝦米幣錢包、每日簽到、新增店家與同步狀態 -->
+                <div class="flex flex-col sm:items-end gap-2.5 self-stretch sm:self-auto">
+                    
+                    <!-- 階段 A 新增：酥脆蝦米幣餘額徽章 + 每日簽到按鈕 + 新增私房好店按鈕 -->
+                    <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2">
+                        <!-- 酥脆蝦米幣錢包 (點選亦可開啟簽到與賺幣說明) -->
+                        <div class="relative">
+                            <button type="button" onclick="openCheckInModal()" title="點擊查看蝦米幣與每日簽到集點卡"
+                                class="sumikko-card-sm bg-[#FFF9E6] hover:bg-[#FCE8A6] px-3.5 py-1.5 flex items-center gap-2 transition cursor-pointer">
+                                <!-- 金黃炸蝦尾造型蝦米幣 SVG -->
+                                <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 28 28" fill="none">
+                                    <circle cx="14" cy="14" r="11" fill="#FCE8A6" stroke="#5C4938" stroke-width="2"/>
+                                    <circle cx="14" cy="14" r="8.2" fill="#F3D39A" stroke="#D9B472" stroke-width="1.2" stroke-dasharray="3 2"/>
+                                    <path d="M16.5 8.5C18 6.5 20.5 8 18.8 10.5C21 10 21 13 18 13Z" fill="#E87A64" stroke="#5C4938" stroke-width="1.3" stroke-linejoin="round"/>
+                                    <path d="M9.5 12.5C7.5 15.5 9 19.5 13.5 19.5C18 19.5 19 16 17.5 12.5C16 9.5 11.5 9.5 9.5 12.5Z" fill="#FFFDF9" stroke="#5C4938" stroke-width="1.5"/>
+                                    <circle cx="12" cy="15" r="1" fill="#5C4938"/>
+                                    <circle cx="15.2" cy="15" r="1" fill="#5C4938"/>
+                                </svg>
+                                <div class="text-left">
+                                    <div class="text-[10px] font-bold text-[#857262] leading-none">酥脆蝦米幣</div>
+                                    <div id="header-coin-balance" class="text-sm sm:text-base font-black text-[#5C4938] leading-tight">0</div>
+                                </div>
+                            </button>
+                            <!-- 動態加幣飄字容器 -->
+                            <div id="coin-float-container" class="pointer-events-none absolute -top-2 right-1 z-30"></div>
+                        </div>
+
+                        <!-- 每日簽到按鈕 (含未簽到紅點提示) -->
+                        <button type="button" onclick="openCheckInModal()"
+                            class="relative capsule-btn bg-[#F9C5BD] hover:bg-[#F7A072] hover:text-white text-xs py-2 px-3.5">
+                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                                <rect x="3" y="4" width="14" height="13" rx="3" fill="#FFFFFF" stroke="#5C4938" stroke-width="1.8"/>
+                                <path d="M6.5 2.5V5.5M13.5 2.5V5.5M3 8.5H17" stroke="#5C4938" stroke-width="1.6" stroke-linecap="round"/>
+                                <circle cx="10" cy="13" r="2" fill="#E87A64"/>
+                            </svg>
+                            <span id="header-checkin-btn-text">每日簽到</span>
+                            <span id="checkin-red-dot" class="hidden absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#E87A64] border-2 border-[#5C4938] animate-bounce"></span>
+                        </button>
+
+                        <!-- 新增私房好店按鈕 -->
+                        <button type="button" onclick="openAddStoreModal()"
+                            class="capsule-btn bg-[#A8D8B9] hover:bg-[#8ec9a3] text-xs py-2 px-3.5">
+                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="10" r="7.5" fill="#FFFFFF" stroke="#5C4938" stroke-width="1.8"/>
+                                <path d="M10 6.5V13.5M6.5 10H13.5" stroke="#5C4938" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>新增私房店</span>
+                        </button>
                     </div>
-                    <!-- 快速定位切換：取得使用者目前所在地 -->
-                    <div class="flex items-center justify-center gap-1.5">
+
+                    <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2">
+                        <div id="sync-status" class="sumikko-card-sm px-3.5 py-1.5 bg-[#FFF9E6] flex items-center gap-2 text-xs font-bold justify-center">
+                            <svg class="w-4 h-4 animate-spin text-[#F7A072]" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="9" stroke="#5C4938" stroke-width="2.2" stroke-dasharray="28 14" stroke-linecap="round"/>
+                            </svg>
+                            <span id="sync-text">阿蝦與米米正在搬運菜單...</span>
+                        </div>
+                        <!-- 快速定位切換：取得使用者目前所在地 -->
                         <button type="button" onclick="locateUserForRoute()" id="btn-mock-loc"
-                            class="px-3 py-1 rounded-full bg-white hover:bg-[#FAF6F0] border-2 border-[#5C4938] text-[11px] font-extrabold text-[#5C4938] flex items-center gap-1 shadow-[0_2px_0_#DFD5C6] transition">
+                            class="px-3 py-1.5 rounded-full bg-white hover:bg-[#FAF6F0] border-2 border-[#5C4938] text-[11px] font-extrabold text-[#5C4938] flex items-center gap-1 shadow-[0_2px_0_#DFD5C6] transition">
                             <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none">
                                 <path d="M10 18C13.5 14 16 11 16 7.5C16 4.2 13.3 1.5 10 1.5C6.7 1.5 4 4.2 4 7.5C4 11 6.5 14 10 18Z" fill="#F9C5BD" stroke="#5C4938" stroke-width="1.8"/>
                                 <circle cx="10" cy="7.5" r="2" fill="#5C4938"/>
@@ -536,8 +625,8 @@
                 </div>
             </div>
 
-            <!-- 頂部 4 大美食手帳分頁切換列 -->
-            <nav class="mt-5 pt-4 border-t-2 border-dashed border-[#DFD5C6] flex flex-wrap items-center justify-center sm:justify-start gap-2.5 relative z-10">
+            <!-- 頂部 4 大美食手帳分頁切換列 (桌機與平板完整顯示，手機亦可點擊或使用底部導覽列) -->
+            <nav class="hidden sm:flex mt-5 pt-4 border-t-2 border-dashed border-[#DFD5C6] flex-wrap items-center justify-center sm:justify-start gap-2.5 relative z-10">
                 <!-- Tab 1: 轉盤抽美食 -->
                 <button type="button" id="tab-btn-wheel" onclick="switchTab('wheel')" class="notebook-tab active">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
@@ -1078,14 +1167,20 @@
                         <button type="button" onclick="setPokedexFilter('stamped', this)" class="capsule-btn">已蓋完食章</button>
                         <button type="button" onclick="setPokedexFilter('unstamped', this)" class="capsule-btn">尚未探索</button>
                         <button type="button" onclick="setPokedexFilter('fav', this)" class="capsule-btn">我的口袋收藏</button>
+                        <button type="button" onclick="setPokedexFilter('custom', this)" class="capsule-btn">私房新增店家</button>
                     </div>
-                    <div class="relative flex-1 max-w-xs">
-                        <input type="text" id="pokedex-search" oninput="renderPokedex()" placeholder="搜尋雲科店名或料理類型..."
-                            class="w-full pl-9 pr-4 py-2 rounded-full border-2 border-[#5C4938] bg-white text-xs sm:text-sm font-bold focus:outline-none focus:bg-[#FFFDF9] shadow-[0_2px_0_#DFD5C6]">
-                        <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#857262]" viewBox="0 0 20 20" fill="none">
-                            <circle cx="9" cy="9" r="6" stroke="#5C4938" stroke-width="2"/>
-                            <path d="M13.5 13.5L17 17" stroke="#5C4938" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
+                    <div class="flex items-center gap-2 flex-1 max-w-md">
+                        <div class="relative flex-1">
+                            <input type="text" id="pokedex-search" oninput="renderPokedex()" placeholder="搜尋雲科店名或料理類型..."
+                                class="w-full pl-9 pr-4 py-2 rounded-full border-2 border-[#5C4938] bg-white text-xs sm:text-sm font-bold focus:outline-none focus:bg-[#FFFDF9] shadow-[0_2px_0_#DFD5C6]">
+                            <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#857262]" viewBox="0 0 20 20" fill="none">
+                                <circle cx="9" cy="9" r="6" stroke="#5C4938" stroke-width="2"/>
+                                <path d="M13.5 13.5L17 17" stroke="#5C4938" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <button type="button" onclick="openAddStoreModal()" class="capsule-btn bg-[#A8D8B9] text-xs whitespace-nowrap py-2 px-3">
+                            <span>+ 新增好店</span>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -1226,21 +1321,262 @@
             </div>
 
             <!-- 4. 私房美食小筆記 -->
-            <div class="sumikko-card-sm bg-white p-4 mb-5">
+            <div class="sumikko-card-sm bg-white p-4 mb-4">
                 <label for="modal-note-input" class="block text-sm font-black text-[#5C4938] mb-2">私房必點＆美食小筆記</label>
-                <textarea id="modal-note-input" rows="3" placeholder="例如：雙醬麵超讚！內用環境很溫馨、加飯免費..."
+                <textarea id="modal-note-input" rows="2" placeholder="例如：雙醬麵超讚！內用環境很溫馨、加飯免費..."
                     class="w-full rounded-xl border-2 border-[#5C4938] bg-[#FAF6F0] p-3 text-xs sm:text-sm font-bold text-[#5C4938] focus:outline-none focus:bg-white"></textarea>
+            </div>
+
+            <!-- 5. 階段 A 新增：線上點餐系統連結設定 -->
+            <div class="sumikko-card-sm bg-white p-4 mb-5">
+                <label for="modal-order-link-input" class="block text-sm font-black text-[#5C4938] mb-1">線上點餐連結（選填，支援 LINE 點餐 / 肚肚 / 快一點 / 外送連結）</label>
+                <p class="text-[11px] font-bold text-[#857262] mb-2">貼上店家的線上點餐網址後，卡片上就會出現「線上點餐免排隊」直達按鈕喔！</p>
+                <input type="url" id="modal-order-link-input" placeholder="https://..."
+                    class="w-full rounded-xl border-2 border-[#5C4938] bg-[#FAF6F0] px-3 py-2 text-xs sm:text-sm font-bold text-[#5C4938] focus:outline-none focus:bg-white">
             </div>
 
             <!-- 儲存按鈕 -->
             <div class="flex gap-3">
                 <button type="button" onclick="closeReviewModal()" class="capsule-btn flex-1 py-3 bg-white">取消</button>
                 <button type="button" onclick="saveStoreReview()" class="spin-main-btn flex-[2] py-3 text-base">
-                    <span>儲存蝦米美食筆記</span>
+                    <span>儲存筆記 (+30 蝦米幣)</span>
                 </button>
             </div>
         </div>
     </div>
+
+    <!-- ==================== 階段 A 新增彈窗 1：每日簽到集點卡 ＆ 酥脆蝦米幣存摺 Modal ==================== -->
+    <div id="checkin-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#5C4938]/50 backdrop-blur-xs p-4">
+        <div class="sumikko-card corner-wall-bg w-full max-w-lg p-5 sm:p-6 animate-pop-card relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onclick="closeCheckInModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white border-2 border-[#5C4938] flex items-center justify-center font-black hover:bg-[#F9C5BD] transition">
+                <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 3L13 13M13 3L3 13" stroke="#5C4938" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+            </button>
+
+            <!-- 標題區 -->
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-[#FCE8A6] border-2 border-[#5C4938] flex items-center justify-center flex-shrink-0 shadow-[0_3px_0_#5C4938]">
+                    <!-- 抱著金幣的阿蝦 SVG -->
+                    <svg class="w-11 h-11" viewBox="0 0 48 48" fill="none">
+                        <path d="M18 9C15 4 21 3 23 8C25 3 31 4 29 9Z" fill="#E87A64" stroke="#5C4938" stroke-width="1.8"/>
+                        <path d="M12 14C8 22 10 35 17 39C24 41 31 39 35 35C39 26 35 14 31 12C24 9 17 9 12 14Z" fill="#F3D39A" stroke="#5C4938" stroke-width="2"/>
+                        <circle cx="18.5" cy="22" r="1.7" fill="#5C4938"/>
+                        <circle cx="29.5" cy="22" r="1.7" fill="#5C4938"/>
+                        <circle cx="24" cy="31" r="6.5" fill="#FCE8A6" stroke="#5C4938" stroke-width="1.8"/>
+                        <path d="M24 27.5V34.5M21.5 30H26.5" stroke="#D9822B" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#F9C5BD] border border-[#5C4938]">蝦米每日集點卡</span>
+                    <h3 class="font-hand text-2xl font-black text-[#5C4938] mt-0.5">酥脆蝦米幣存摺</h3>
+                    <p class="text-xs font-bold text-[#857262]">每天來找阿蝦與米米簽到，收集蝦米幣準備解鎖更多驚喜！</p>
+                </div>
+            </div>
+
+            <!-- 目前持有蝦米幣與連續簽到天數 -->
+            <div class="sumikko-card-sm bg-white p-4 mb-4 flex items-center justify-between">
+                <div>
+                    <div class="text-xs font-bold text-[#857262]">目前持有酥脆蝦米幣</div>
+                    <div class="flex items-baseline gap-1.5 mt-0.5">
+                        <span id="modal-coin-balance" class="font-hand text-3xl font-black text-[#E87A64]">0</span>
+                        <span class="text-xs font-black text-[#5C4938]">枚炸蝦屑屑</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-bold text-[#857262]">累積簽到進度</div>
+                    <div id="modal-streak-text" class="text-sm font-black text-[#5C4938] mt-0.5">第 1 / 7 天</div>
+                </div>
+            </div>
+
+            <!-- 7 天印章格 -->
+            <div class="mb-4">
+                <div class="text-xs font-black text-[#5C4938] mb-2">連續 7 日簽到印章卡（第 7 天享豪華大禮包！）</div>
+                <div id="checkin-days-grid" class="grid grid-cols-4 sm:grid-cols-7 gap-2"></div>
+            </div>
+
+            <!-- 立即簽到主按鈕 -->
+            <button type="button" id="btn-do-checkin" onclick="performDailyCheckIn()" class="spin-main-btn py-3 text-base mb-5">
+                <span id="btn-do-checkin-text">蓋上今日簽到章 (+20 蝦米幣)</span>
+            </button>
+
+            <!-- 賺取蝦米幣小撇步 -->
+            <div class="sumikko-card-sm bg-[#FFFDF7] p-4 border-dashed">
+                <div class="text-xs font-black text-[#5C4938] mb-2.5 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="8" fill="#FCE8A6" stroke="#5C4938" stroke-width="1.6"/>
+                        <path d="M10 6V10.5M10 13.5H10.01" stroke="#5C4938" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span>如何賺取更多「酥脆蝦米幣」？</span>
+                </div>
+                <div class="space-y-2 text-xs font-bold text-[#5C4938]">
+                    <div class="flex items-center justify-between bg-[#FAF6F0] px-3 py-1.5 rounded-xl border border-[#DFD5C6]">
+                        <span>1. 每日簽到打卡</span>
+                        <span class="font-black text-[#E87A64]">+20 ~ +120 幣</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-[#FAF6F0] px-3 py-1.5 rounded-xl border border-[#DFD5C6]">
+                        <span>2. 每日首次轉動美食盲盒</span>
+                        <span id="quest-daily-spin-status" class="font-black text-[#E87A64]">+15 幣</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-[#FAF6F0] px-3 py-1.5 rounded-xl border border-[#DFD5C6]">
+                        <span>3. 撰寫店家蝦米評鑑與蓋完食章</span>
+                        <span class="font-black text-[#E87A64]">+30 幣 / 間</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-[#FAF6F0] px-3 py-1.5 rounded-xl border border-[#DFD5C6]">
+                        <span>4. 通報新增一間雲科私房好店</span>
+                        <span class="font-black text-[#E87A64]">+80 幣 / 間</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 階段 A 新增彈窗 2：讓使用者自己添加私房店家 Modal ==================== -->
+    <div id="add-store-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#5C4938]/50 backdrop-blur-xs p-4">
+        <div class="sumikko-card corner-wall-bg w-full max-w-lg p-5 sm:p-6 animate-pop-card relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onclick="closeAddStoreModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white border-2 border-[#5C4938] flex items-center justify-center font-black hover:bg-[#F9C5BD] transition">
+                <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 3L13 13M13 3L3 13" stroke="#5C4938" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+            </button>
+
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-[#A8D8B9] border-2 border-[#5C4938] flex items-center justify-center flex-shrink-0 shadow-[0_3px_0_#5C4938]">
+                    <!-- 小房子加號 SVG -->
+                    <svg class="w-8 h-8" viewBox="0 0 36 36" fill="none">
+                        <rect x="7" y="15" width="22" height="16" rx="3" fill="#FFFDF9" stroke="#5C4938" stroke-width="2.2"/>
+                        <path d="M4 16L18 5L32 16H4Z" fill="#F7A072" stroke="#5C4938" stroke-width="2.2" stroke-linejoin="round"/>
+                        <path d="M18 19V27M14 23H22" stroke="#5C4938" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#A8D8B9] border border-[#5C4938]">擴建蝦米小鎮 (+80 蝦米幣)</span>
+                    <h3 class="font-hand text-2xl font-black text-[#5C4938] mt-0.5">新增雲科私房店家</h3>
+                    <p class="text-xs font-bold text-[#857262]">把系統還沒有的隱藏版美食加進手帳，小鎮地圖也會長出新房子喔！</p>
+                </div>
+            </div>
+
+            <div class="space-y-3.5 text-left">
+                <!-- 店名 -->
+                <div class="sumikko-card-sm bg-white p-3.5">
+                    <label for="custom-store-name" class="block text-xs font-black text-[#5C4938] mb-1.5">1. 店家名稱（必填）*</label>
+                    <input type="text" id="custom-store-name" placeholder="例如：阿琴火雞肉飯、雲科隱藏版蔥油餅..."
+                        class="w-full rounded-xl border-2 border-[#5C4938] bg-[#FAF6F0] px-3 py-2 text-xs sm:text-sm font-bold text-[#5C4938] focus:outline-none focus:bg-white">
+                </div>
+
+                <!-- 料理類型與均消預算 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="sumikko-card-sm bg-white p-3.5">
+                        <label for="custom-store-type" class="block text-xs font-black text-[#5C4938] mb-1.5">2. 料理類型</label>
+                        <select id="custom-store-type" class="w-full rounded-xl border-2 border-[#5C4938] bg-[#FAF6F0] px-3 py-2 text-xs sm:text-sm font-bold text-[#5C4938] focus:outline-none">
+                            <option value="中式">中式</option>
+                            <option value="西式">西式</option>
+                            <option value="日式">日式</option>
+                            <option value="其他異國料理">其他異國料理</option>
+                            <option value="飲料">飲料 / 甜點</option>
+                        </select>
+                    </div>
+                    <div class="sumikko-card-sm bg-white p-3.5">
+                        <label for="custom-store-price" class="block text-xs font-black text-[#5C4938] mb-1.5">3. 均消預算</label>
+                        <select id="custom-store-price" class="w-full rounded-xl border-2 border-[#5C4938] bg-[#FAF6F0] px-3 py-2 text-xs sm:text-sm font-bold text-[#5C4938] focus:outline-none">
+                            <option value="100">約 100 元內</option>
+                            <option value="200">約 200 元內</option>
+                            <option value="300">約 300 元內</option>
+                            <option value="500">約 500 元內</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 用餐時段 (可複選膠囊) -->
+                <div class="sumikko-card-sm bg-white p-3.5">
+                    <div class="text-xs font-black text-[#5C4938] mb-2">4. 供應時段（可複選）</div>
+                    <div id="custom-store-meals" class="flex flex-wrap gap-2">
+                        <button type="button" onclick="toggleCustomMealPill(this, '早餐')" class="sticker-tag">早餐</button>
+                        <button type="button" onclick="toggleCustomMealPill(this, '午餐')" class="sticker-tag selected">午餐</button>
+                        <button type="button" onclick="toggleCustomMealPill(this, '晚餐')" class="sticker-tag selected">晚餐</button>
+                        <button type="button" onclick="toggleCustomMealPill(this, '宵夜')" class="sticker-tag">宵夜</button>
+                        <button type="button" onclick="toggleCustomMealPill(this, '飲料')" class="sticker-tag">飲料</button>
+                    </div>
+                </div>
+
+                <!-- 所在商圈位置 (自動配置小鎮地圖座標) -->
+                <div class="sumikko-card-sm bg-white p-3.5">
+                    <label for="custom-store-zone" class="block text-xs font-black text-[#5C4938] mb-1.5">5. 所在小鎮商圈（決定小房子蓋在哪裡）</label>
+                    <select id="custom-store-zone" class="w-full rounded-xl border-2 border-[#5C4938] bg-[#FAF6F0] px-3 py-2 text-xs sm:text-sm font-bold text-[#5C4938] focus:outline-none">
+                        <option value="yuntech">雲科校園生活圈（大學路三段周邊）</option>
+                        <option value="longtan">龍潭路美食街（龍潭南北路商圈）</option>
+                        <option value="zhongshan">中山路食堂區（中山路美食長廊）</option>
+                        <option value="minsheng">民生南路商圈（民生南路周邊）</option>
+                        <option value="station">斗六站前美食廣場（火車站周邊）</option>
+                    </select>
+                </div>
+
+                <!-- 營業時間與線上點餐連結 (選填) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="sumikko-card-sm bg-white p-3.5">
+                        <label for="custom-store-open" class="block text-xs font-black text-[#5C4938] mb-1">6. 營業時間（選填）</label>
+                        <input type="text" id="custom-store-open" placeholder="例如：11:00-20:30"
+                            class="w-full rounded-xl border-2 border-[#5C4938] bg-[#FAF6F0] px-3 py-1.5 text-xs font-bold text-[#5C4938] focus:outline-none">
+                    </div>
+                    <div class="sumikko-card-sm bg-white p-3.5">
+                        <label for="custom-store-order" class="block text-xs font-black text-[#5C4938] mb-1">7. 線上點餐連結（選填）</label>
+                        <input type="url" id="custom-store-order" placeholder="LINE點餐或外送網址..."
+                            class="w-full rounded-xl border-2 border-[#5C4938] bg-[#FAF6F0] px-3 py-1.5 text-xs font-bold text-[#5C4938] focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-5">
+                <button type="button" onclick="closeAddStoreModal()" class="capsule-btn flex-1 py-3 bg-white">取消</button>
+                <button type="button" onclick="submitCustomStore()" class="spin-main-btn flex-[2] py-3 text-base">
+                    <span>蓋好新店屋 (+80 蝦米幣)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 階段 A 新增：手機優先底部浮動導覽列 (Mobile Bottom App Bar) ==================== -->
+    <nav class="sm:hidden fixed bottom-3 left-3 right-3 z-40 mobile-bottom-nav px-2 py-1.5 flex items-center justify-around">
+        <button type="button" id="m-tab-btn-wheel" onclick="switchTab('wheel')" class="mobile-nav-item active">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" fill="#F9C5BD" stroke="#5C4938" stroke-width="2"/>
+                <circle cx="12" cy="12" r="2.8" fill="#FFFFFF" stroke="#5C4938" stroke-width="1.6"/>
+            </svg>
+            <span>抽美食</span>
+        </button>
+
+        <button type="button" id="m-tab-btn-map" onclick="switchTab('map')" class="mobile-nav-item">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6L9 3L15 6L21 3V18L15 21L9 18L3 21V6Z" fill="#BBE2F2" stroke="#5C4938" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+            <span>蝦米小鎮</span>
+        </button>
+
+        <!-- 中央快速新增私房好店按鈕 -->
+        <button type="button" onclick="openAddStoreModal()" class="flex flex-col items-center justify-center -mt-4">
+            <div class="w-11 h-11 rounded-full bg-[#F7A072] border-2 border-[#5C4938] shadow-[0_3px_0_#5C4938] flex items-center justify-center text-white active:translate-y-0.5">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 5V19M5 12H19" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <span class="text-[10px] font-black text-[#5C4938] mt-0.5">新增好店</span>
+        </button>
+
+        <button type="button" id="m-tab-btn-pokedex" onclick="switchTab('pokedex')" class="mobile-nav-item">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                <rect x="4" y="3" width="16" height="18" rx="3" fill="#A8D8B9" stroke="#5C4938" stroke-width="2"/>
+                <circle cx="12" cy="11" r="3.5" fill="#FFFFFF" stroke="#5C4938" stroke-width="1.6"/>
+            </svg>
+            <span>完食圖鑑</span>
+        </button>
+
+        <button type="button" id="m-tab-btn-pocket" onclick="switchTab('pocket')" class="mobile-nav-item">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                <path d="M12 20C12 20 4 14.8 4 9.2C4 6.4 6.2 4.2 9 4.2C10.7 4.2 12 5.2 12 5.2C12 5.2 13.3 4.2 15 4.2C17.8 4.2 20 6.4 20 9.2C20 14.8 12 20 12 20Z" fill="#F9C5BD" stroke="#5C4938" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+            <span>口袋名單</span>
+        </button>
+    </nav>
 
     <!-- 角落生物風輕量提示氣泡 Toast -->
     <div id="sumikko-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform translate-y-4">
@@ -1258,18 +1594,48 @@
         // Google 試算表發佈連結 (完整保留)
         const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRgR-xVrt0xrqEnRSjwGU9_En5SlueYShf4GNZ5nJJPAFmNdwblLCeb9GmhcaRWmmvK3Gd3biuAcaA2/pub?output=csv";
 
-        // 備援雲科周邊真實美食資料 (當離線或連線受阻時自動啟用)
+        // 備援雲科周邊真實美食資料 (當離線或連線受阻時自動啟用，支援 order_link 點餐連結)
         const FALLBACK_STORES = [
-            { name: "施家屯牛雜", type: "中式", "price_level (均消預算)": "100", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.4", open_time_1: "11:00", close_time_1: "20:30", closed_days_1: "Saturday", "lat(緯度)": "23.6928", "lng(經度)": "120.5342", map_link: "https://www.google.com/maps/search/?api=1&query=雲林科技大學+施家屯牛雜" },
-            { name: "大吉祥香豆腐", type: "中式", "price_level (均消預算)": "100", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.3", open_time_1: "11:00", close_time_1: "20:00", closed_days_1: "Sunday", "lat(緯度)": "23.6941", "lng(經度)": "120.5355", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+大吉祥香豆腐" },
-            { name: "雲科阿婆水餃", type: "中式", "price_level (均消預算)": "100", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.5", open_time_1: "11:00", close_time_1: "19:30", closed_days_1: "Saturday", "lat(緯度)": "23.6935", "lng(經度)": "120.5361", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+阿婆水餃" },
-            { name: "Mr.拉麵 (斗六店)", type: "日式", "price_level (均消預算)": "200", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.2", open_time_1: "11:00", close_time_1: "14:00", open_time_2: "17:00", close_time_2: "20:30", "lat(緯度)": "23.7021", "lng(經度)": "120.5398", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+Mr.拉麵" },
-            { name: "凹凸咖啡館", type: "西式", "price_level (均消預算)": "300", meal_time_1: "午餐", meal_time_2: "飲料", rating: "4.6", open_time_1: "10:00", close_time_1: "18:00", closed_days_1: "Tuesday", "lat(緯度)": "23.7072", "lng(經度)": "120.5412", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+凹凸咖啡館" },
-            { name: "老鄰居1971", type: "中式", "price_level (均消預算)": "300", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.5", open_time_1: "11:10", close_time_1: "14:00", open_time_2: "17:10", close_time_2: "20:00", closed_days_1: "Wednesday", "lat(緯度)": "23.7089", "lng(經度)": "120.5430", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+老鄰居1971" },
-            { name: "晨間廚房 雲科店", type: "西式", "price_level (均消預算)": "100", meal_time_1: "早餐", meal_time_2: "午餐", rating: "4.3", open_time_1: "06:00", close_time_1: "13:00", "lat(緯度)": "23.6948", "lng(經度)": "120.5370", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+晨間廚房" },
-            { name: "迷客夏 斗六民生店", type: "飲料", "price_level (均消預算)": "100", meal_time_1: "飲料", meal_time_2: "宵夜", rating: "4.4", open_time_1: "09:30", close_time_1: "22:00", "lat(緯度)": "23.7105", "lng(經度)": "120.5415", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+迷客夏" },
-            { name: "泰國小館 雲科店", type: "其他異國料理", "price_level (均消預算)": "200", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.3", open_time_1: "11:00", close_time_1: "20:30", "lat(緯度)": "23.6952", "lng(經度)": "120.5364", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+泰國小館" }
+            { name: "施家屯牛雜", type: "中式", "price_level (均消預算)": "100", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.4", open_time_1: "11:00", close_time_1: "20:30", closed_days_1: "Saturday", "lat(緯度)": "23.6928", "lng(經度)": "120.5342", map_link: "https://www.google.com/maps/search/?api=1&query=雲林科技大學+施家屯牛雜", order_link: "" },
+            { name: "大吉祥香豆腐", type: "中式", "price_level (均消預算)": "100", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.3", open_time_1: "11:00", close_time_1: "20:00", closed_days_1: "Sunday", "lat(緯度)": "23.6941", "lng(經度)": "120.5355", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+大吉祥香豆腐", order_link: "" },
+            { name: "雲科阿婆水餃", type: "中式", "price_level (均消預算)": "100", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.5", open_time_1: "11:00", close_time_1: "19:30", closed_days_1: "Saturday", "lat(緯度)": "23.6935", "lng(經度)": "120.5361", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+阿婆水餃", order_link: "" },
+            { name: "Mr.拉麵 (斗六店)", type: "日式", "price_level (均消預算)": "200", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.2", open_time_1: "11:00", close_time_1: "14:00", open_time_2: "17:00", close_time_2: "20:30", "lat(緯度)": "23.7021", "lng(經度)": "120.5398", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+Mr.拉麵", order_link: "https://www.foodpanda.com.tw/" },
+            { name: "凹凸咖啡館", type: "西式", "price_level (均消預算)": "300", meal_time_1: "午餐", meal_time_2: "飲料", rating: "4.6", open_time_1: "10:00", close_time_1: "18:00", closed_days_1: "Tuesday", "lat(緯度)": "23.7072", "lng(經度)": "120.5412", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+凹凸咖啡館", order_link: "" },
+            { name: "老鄰居1971", type: "中式", "price_level (均消預算)": "300", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.5", open_time_1: "11:10", close_time_1: "14:00", open_time_2: "17:10", close_time_2: "20:00", closed_days_1: "Wednesday", "lat(緯度)": "23.7089", "lng(經度)": "120.5430", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+老鄰居1971", order_link: "" },
+            { name: "晨間廚房 雲科店", type: "西式", "price_level (均消預算)": "100", meal_time_1: "早餐", meal_time_2: "午餐", rating: "4.3", open_time_1: "06:00", close_time_1: "13:00", "lat(緯度)": "23.6948", "lng(經度)": "120.5370", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+晨間廚房", order_link: "https://www.mk2000.com.tw/" },
+            { name: "迷客夏 斗六民生店", type: "飲料", "price_level (均消預算)": "100", meal_time_1: "飲料", meal_time_2: "宵夜", rating: "4.4", open_time_1: "09:30", close_time_1: "22:00", "lat(緯度)": "23.7105", "lng(經度)": "120.5415", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+迷客夏", order_link: "https://milksha.nidin.shop/" },
+            { name: "泰國小館 雲科店", type: "其他異國料理", "price_level (均消預算)": "200", meal_time_1: "午餐", meal_time_2: "晚餐", rating: "4.3", open_time_1: "11:00", close_time_1: "20:30", "lat(緯度)": "23.6952", "lng(經度)": "120.5364", map_link: "https://www.google.com/maps/search/?api=1&query=斗六+泰國小館", order_link: "" }
         ];
+
+        // 預設知名連鎖或雲科常見點餐系統自動配對表 (當試算表尚未填寫點餐連結時自動啟用)
+        const DEFAULT_ORDER_LINKS_BY_KEYWORD = [
+            { kw: "迷客夏", url: "https://milksha.nidin.shop/" },
+            { kw: "五十嵐", url: "https://www.ubereats.com/tw" },
+            { kw: "50嵐", url: "https://www.ubereats.com/tw" },
+            { kw: "清原", url: "https://www.ubereats.com/tw" },
+            { kw: "可不可", url: "https://kebuke.nidin.shop/" },
+            { kw: "得正", url: "https://dejeng.nidin.shop/" },
+            { kw: "麻古", url: "https://macu.nidin.shop/" },
+            { kw: "八方雲集", url: "https://www.8way.com.tw/" },
+            { kw: "晨間廚房", url: "https://www.mk2000.com.tw/" },
+            { kw: "麥味登", url: "https://www.mwd.com.tw/" },
+            { kw: "拉亞漢堡", url: "https://www.laya.com.tw/" },
+            { kw: "麥當勞", url: "https://www.mcdonalds.com/tw/zh-tw.html" },
+            { kw: "肯德基", url: "https://www.kfcclub.com.tw/" },
+            { kw: "必勝客", url: "https://www.pizzahut.com.tw/" }
+        ];
+
+        // 階段 A 新增：連續 7 日簽到獎勵設定
+        const CHECKIN_REWARDS = [20, 25, 30, 35, 40, 50, 120];
+
+        // 階段 A 新增：小鎮商圈基準經緯度 (供使用者新增私房店家時定位房屋)
+        const SHIAMI_TOWN_ZONES = {
+            yuntech:   { lat: 23.6932, lng: 120.5348, label: "雲科校園生活圈" },
+            longtan:   { lat: 23.6955, lng: 120.5362, label: "龍潭路美食街" },
+            zhongshan: { lat: 23.7028, lng: 120.5396, label: "中山路食堂區" },
+            minsheng:  { lat: 23.7068, lng: 120.5425, label: "民生南路商圈" },
+            station:   { lat: 23.7112, lng: 120.5412, label: "斗六站前美食廣場" }
+        };
 
         // 轉盤 6 個盲盒主題名稱 (完全無角落字眼)
         const BLIND_BOX_THEMES = [
@@ -1331,21 +1697,34 @@
             "必回訪神店"
         ];
 
-        // LocalStorage 狀態管理
+        // LocalStorage 狀態管理 (擴充階段 A：蝦米幣經濟、簽到狀態、使用者自訂店家)
         const STORAGE_KEYS = {
             FAVS: 'sumikko_yuntech_favs_v1',
             REVIEWS: 'sumikko_yuntech_reviews_v1',
-            HIDDEN_TODAY: 'sumikko_yuntech_hidden_v1'
+            HIDDEN_TODAY: 'sumikko_yuntech_hidden_v1',
+            ECONOMY: 'sumikko_yuntech_economy_v1',
+            CUSTOM_STORES: 'sumikko_yuntech_custom_stores_v1'
         };
 
         let favoriteStores = [];
         let storeReviews = {};
         let hiddenTodayStores = [];
+        let customAddedStores = [];
+        let baseSheetStores = [];
         let pokedexFilterMode = 'all';
+
+        // 階段 A：蝦米幣與簽到經濟狀態
+        let economyState = {
+            coins: 50, // 初始贈送 50 枚酥脆蝦米幣迎新禮
+            streak: 0,
+            lastCheckInDate: '',
+            lastSpinRewardDate: ''
+        };
 
         // Modal 編輯暫存狀態
         let activeModalStoreName = null;
-        let modalTempState = { rating: 0, tags: [], note: '', stamped: false, fav: false };
+        let modalTempState = { rating: 0, tags: [], note: '', orderLink: '', stamped: false, fav: false };
+        let customModalSelectedMeals = ['午餐', '晚餐'];
 
         // 篩選條件狀態
         const filterState = {
@@ -1364,6 +1743,20 @@
                 const rawReviews = localStorage.getItem(STORAGE_KEYS.REVIEWS);
                 storeReviews = rawReviews ? JSON.parse(rawReviews) : {};
 
+                const rawCustom = localStorage.getItem(STORAGE_KEYS.CUSTOM_STORES);
+                customAddedStores = rawCustom ? JSON.parse(rawCustom) : [];
+
+                const rawEco = localStorage.getItem(STORAGE_KEYS.ECONOMY);
+                if (rawEco) {
+                    const parsedEco = JSON.parse(rawEco);
+                    economyState = {
+                        coins: typeof parsedEco.coins === 'number' ? parsedEco.coins : 50,
+                        streak: typeof parsedEco.streak === 'number' ? parsedEco.streak : 0,
+                        lastCheckInDate: parsedEco.lastCheckInDate || '',
+                        lastSpinRewardDate: parsedEco.lastSpinRewardDate || ''
+                    };
+                }
+
                 const todayStr = new Date().toISOString().slice(0, 10);
                 const rawHidden = localStorage.getItem(STORAGE_KEYS.HIDDEN_TODAY);
                 if (rawHidden) {
@@ -1378,7 +1771,344 @@
                 favoriteStores = [];
                 storeReviews = {};
                 hiddenTodayStores = [];
+                customAddedStores = [];
             }
+            updateEconomyUI();
+        }
+
+        function saveEconomyToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.ECONOMY, JSON.stringify(economyState));
+            } catch (e) {}
+            updateEconomyUI();
+        }
+
+        function saveCustomStoresToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.CUSTOM_STORES, JSON.stringify(customAddedStores));
+            } catch (e) {}
+        }
+
+        // 增加酥脆蝦米幣並播放飄字動畫
+        function addShiamiCoins(amount, reasonText) {
+            if (!amount || amount <= 0) return;
+            economyState.coins += amount;
+            saveEconomyToStorage();
+
+            // 頂部錢包飄出 +XX 幣動畫
+            const floatContainer = document.getElementById('coin-float-container');
+            if (floatContainer) {
+                const badge = document.createElement('div');
+                badge.className = 'coin-float-anim px-2.5 py-0.5 rounded-full bg-[#E87A64] text-white border-2 border-[#5C4938] text-xs font-black whitespace-nowrap shadow-sm';
+                badge.textContent = `+${amount} 蝦米幣`;
+                floatContainer.appendChild(badge);
+                setTimeout(() => {
+                    if (badge.parentNode) badge.parentNode.removeChild(badge);
+                }, 1550);
+            }
+
+            if (reasonText) {
+                showSumikkoToast(`${reasonText} 獲得 +${amount} 酥脆蝦米幣！`);
+            }
+        }
+
+        // 更新頂部與彈窗中的蝦米幣餘額與簽到紅點
+        function updateEconomyUI() {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const checkedInToday = (economyState.lastCheckInDate === todayStr);
+
+            const headerBalance = document.getElementById('header-coin-balance');
+            if (headerBalance) headerBalance.textContent = economyState.coins.toLocaleString();
+
+            const modalBalance = document.getElementById('modal-coin-balance');
+            if (modalBalance) modalBalance.textContent = economyState.coins.toLocaleString();
+
+            const redDot = document.getElementById('checkin-red-dot');
+            const checkinBtnText = document.getElementById('header-checkin-btn-text');
+            if (redDot && checkinBtnText) {
+                if (checkedInToday) {
+                    redDot.classList.add('hidden');
+                    checkinBtnText.textContent = '今日已簽到';
+                } else {
+                    redDot.classList.remove('hidden');
+                    checkinBtnText.textContent = '每日簽到';
+                }
+            }
+
+            const spinQuestStatus = document.getElementById('quest-daily-spin-status');
+            if (spinQuestStatus) {
+                if (economyState.lastSpinRewardDate === todayStr) {
+                    spinQuestStatus.textContent = '今日已領取 (+15 幣)';
+                    spinQuestStatus.className = 'font-black text-[#2E7D5B]';
+                } else {
+                    spinQuestStatus.textContent = '+15 幣 (今日未領)';
+                    spinQuestStatus.className = 'font-black text-[#E87A64]';
+                }
+            }
+        }
+
+        // ==================== 階段 A：每日簽到集點卡邏輯 ====================
+        function openCheckInModal() {
+            renderCheckInModal();
+            const modal = document.getElementById('checkin-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeCheckInModal() {
+            const modal = document.getElementById('checkin-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function renderCheckInModal() {
+            updateEconomyUI();
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const checkedInToday = (economyState.lastCheckInDate === todayStr);
+
+            // 計算當前視覺顯示的進度天數 (1~7)
+            let displayStreak = economyState.streak % 7;
+            if (checkedInToday && displayStreak === 0 && economyState.streak > 0) {
+                displayStreak = 7;
+            }
+            const nextDayIndex = checkedInToday ? displayStreak : (displayStreak + 1);
+
+            const streakText = document.getElementById('modal-streak-text');
+            if (streakText) {
+                streakText.textContent = checkedInToday
+                    ? `已連續簽到 ${economyState.streak} 天`
+                    : `準備蓋下第 ${nextDayIndex} 天印章`;
+            }
+
+            const grid = document.getElementById('checkin-days-grid');
+            if (grid) {
+                grid.innerHTML = CHECKIN_REWARDS.map((reward, idx) => {
+                    const dayNum = idx + 1;
+                    const isStamped = dayNum <= displayStreak;
+                    const isTodayTarget = !checkedInToday && (dayNum === nextDayIndex);
+                    const isDay7 = (dayNum === 7);
+
+                    let bgClass = isStamped ? 'bg-[#FCE8A6]' : (isTodayTarget ? 'bg-[#FFF5F5] border-dashed' : 'bg-white opacity-85');
+                    return `
+                        <div class="sumikko-card-sm ${bgClass} p-2 flex flex-col items-center justify-between text-center relative ${isDay7 ? 'col-span-2 sm:col-span-1' : ''}">
+                            <span class="text-[10px] font-black text-[#857262]">Day ${dayNum}</span>
+                            <div class="my-1">
+                                ${isStamped ? `
+                                <svg class="w-7 h-7" viewBox="0 0 28 28" fill="none">
+                                    <circle cx="14" cy="14" r="11" fill="#E87A64" stroke="#5C4938" stroke-width="1.8"/>
+                                    <path d="M9.5 14.5L12.5 17.5L18.8 11" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                ` : `
+                                <svg class="w-7 h-7" viewBox="0 0 28 28" fill="none">
+                                    <circle cx="14" cy="14" r="10" fill="${isDay7 ? '#F9C5BD' : '#FAF6F0'}" stroke="#5C4938" stroke-width="1.8"/>
+                                    <circle cx="11.5" cy="14" r="1.2" fill="#5C4938"/>
+                                    <circle cx="16.5" cy="14" r="1.2" fill="#5C4938"/>
+                                </svg>
+                                `}
+                            </div>
+                            <span class="text-[11px] font-black text-[#5C4938]">+${reward}幣</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const btn = document.getElementById('btn-do-checkin');
+            const btnText = document.getElementById('btn-do-checkin-text');
+            if (btn && btnText) {
+                if (checkedInToday) {
+                    btn.disabled = true;
+                    btnText.textContent = '今日已完成簽到！明天再來找阿蝦米米';
+                } else {
+                    btn.disabled = false;
+                    const rewardAmt = CHECKIN_REWARDS[(nextDayIndex - 1) % 7];
+                    btnText.textContent = `蓋上第 ${nextDayIndex} 天簽到章 (+${rewardAmt} 蝦米幣)`;
+                }
+            }
+        }
+
+        function performDailyCheckIn() {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            if (economyState.lastCheckInDate === todayStr) {
+                showSumikkoToast('今天已經蓋過簽到章囉！');
+                return;
+            }
+
+            // 檢查是否與昨天連續
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+            if (economyState.lastCheckInDate === yesterdayStr) {
+                economyState.streak += 1;
+            } else {
+                economyState.streak = 1;
+            }
+
+            economyState.lastCheckInDate = todayStr;
+            const cycleIdx = (economyState.streak - 1) % 7;
+            const reward = CHECKIN_REWARDS[cycleIdx];
+
+            addShiamiCoins(reward, `完成第 ${economyState.streak} 天簽到打卡！`);
+            renderCheckInModal();
+            firePastelConfetti();
+        }
+
+        // ==================== 階段 A：使用者新增私房店家邏輯 ====================
+        function openAddStoreModal() {
+            document.getElementById('custom-store-name').value = '';
+            document.getElementById('custom-store-open').value = '';
+            document.getElementById('custom-store-order').value = '';
+            customModalSelectedMeals = ['午餐', '晚餐'];
+
+            const mealContainer = document.getElementById('custom-store-meals');
+            if (mealContainer) {
+                mealContainer.querySelectorAll('.sticker-tag').forEach(btn => {
+                    const txt = btn.textContent.trim();
+                    if (customModalSelectedMeals.includes(txt)) btn.classList.add('selected');
+                    else btn.classList.remove('selected');
+                });
+            }
+
+            const modal = document.getElementById('add-store-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeAddStoreModal() {
+            const modal = document.getElementById('add-store-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function toggleCustomMealPill(btnEl, mealName) {
+            const idx = customModalSelectedMeals.indexOf(mealName);
+            if (idx >= 0) {
+                if (customModalSelectedMeals.length > 1) {
+                    customModalSelectedMeals.splice(idx, 1);
+                    btnEl.classList.remove('selected');
+                } else {
+                    showSumikkoToast('至少要保留一個供應時段喔！');
+                }
+            } else {
+                customModalSelectedMeals.push(mealName);
+                btnEl.classList.add('selected');
+            }
+        }
+
+        function submitCustomStore() {
+            const nameInput = document.getElementById('custom-store-name');
+            const storeName = (nameInput.value || '').trim();
+            if (!storeName) {
+                showSumikkoToast('請先輸入私房店家的名稱喔！');
+                nameInput.focus();
+                return;
+            }
+
+            if (stores.some(s => s.name.toLowerCase() === storeName.toLowerCase())) {
+                showSumikkoToast(`「${storeName}」已經在美食手帳裡面囉！`);
+                return;
+            }
+
+            const typeVal = document.getElementById('custom-store-type').value;
+            const priceVal = parseInt(document.getElementById('custom-store-price').value, 10) || 100;
+            const zoneKey = document.getElementById('custom-store-zone').value;
+            const openStr = (document.getElementById('custom-store-open').value || '').trim() || '11:00-20:30';
+            const orderLink = (document.getElementById('custom-store-order').value || '').trim();
+
+            const zoneObj = SHIAMI_TOWN_ZONES[zoneKey] || SHIAMI_TOWN_ZONES.yuntech;
+            // 在選定商圈附近加入微小隨機偏移，再由防重疊演算法排好
+            const jitterLat = (Math.random() - 0.5) * 0.0028;
+            const jitterLng = (Math.random() - 0.5) * 0.0028;
+
+            let rawOpen1 = null;
+            let rawClose1 = null;
+            if (openStr.includes('-')) {
+                const parts = openStr.split('-');
+                if (parts[0] && parts[0].includes(':')) rawOpen1 = parts[0].trim().substring(0, 5);
+                if (parts[1] && parts[1].includes(':')) rawClose1 = parts[1].trim().substring(0, 5);
+            }
+
+            const newStoreObj = {
+                name: storeName,
+                type: typeVal,
+                price_level: priceVal,
+                meal_times: [...customModalSelectedMeals],
+                rating: 4.5,
+                open: openStr,
+                closed: "無",
+                raw_open_1: rawOpen1,
+                raw_close_1: rawClose1,
+                raw_open_2: null,
+                raw_close_2: null,
+                raw_closed_days: [],
+                lat: parseFloat((zoneObj.lat + jitterLat).toFixed(5)),
+                lng: parseFloat((zoneObj.lng + jitterLng).toFixed(5)),
+                map_link: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('斗六 ' + storeName)}`,
+                order_link: orderLink,
+                isCustom: true
+            };
+
+            customAddedStores.push(newStoreObj);
+            saveCustomStoresToStorage();
+
+            // 重新合併店家清單並計算小鎮座標
+            rebuildMergedStores();
+            closeAddStoreModal();
+
+            // 獎勵 +80 蝦米幣
+            addShiamiCoins(80, `成功為蝦米小鎮新增「${storeName}」！`);
+
+            // 直接在結果區展示這間新蓋好的私房店
+            lastDrawnStoreName = newStoreObj.name;
+            renderResultCard(newStoreObj, { title: "私房新店落成", desc: "你親手為蝦米小鎮蓋好的私房美食小屋！" });
+
+            if (!document.getElementById('tab-panel-pokedex').classList.contains('hidden')) {
+                renderPokedex();
+            }
+            if (!document.getElementById('tab-panel-map').classList.contains('hidden')) {
+                initOrUpdateFullMap();
+            }
+        }
+
+        function deleteCustomStore(storeName) {
+            customAddedStores = customAddedStores.filter(s => s.name !== storeName);
+            saveCustomStoresToStorage();
+            rebuildMergedStores();
+            showSumikkoToast(`已將私房店家「${storeName}」從手帳移除`);
+
+            if (!document.getElementById('tab-panel-pokedex').classList.contains('hidden')) {
+                renderPokedex();
+            }
+            if (!document.getElementById('tab-panel-pocket').classList.contains('hidden')) {
+                renderPocketTab();
+            }
+            if (!document.getElementById('tab-panel-map').classList.contains('hidden')) {
+                initOrUpdateFullMap();
+            }
+        }
+
+        // 取得店家的線上點餐連結（優先順序：使用者於評鑑自訂 > 店家資料內建 order_link > 知名連鎖關鍵字自動配對）
+        function getStoreOrderLink(store) {
+            if (!store) return '';
+            const rev = storeReviews[store.name];
+            if (rev && rev.orderLink && rev.orderLink.trim() !== '') {
+                return rev.orderLink.trim();
+            }
+            if (store.order_link && store.order_link.trim() !== '') {
+                return store.order_link.trim();
+            }
+            for (const item of DEFAULT_ORDER_LINKS_BY_KEYWORD) {
+                if (store.name.includes(item.kw)) return item.url;
+            }
+            return '';
+        }
+
+        function rebuildMergedStores() {
+            const existingNames = new Set(baseSheetStores.map(s => s.name));
+            const uniqueCustom = customAddedStores.filter(cs => !existingNames.has(cs.name));
+            stores = [...baseSheetStores, ...uniqueCustom];
+            computeSpreadMapCoords(stores);
+            updateAllBadgesAndCounts();
         }
 
         function saveFavoritesToStorage() {
@@ -1422,12 +2152,13 @@
             }, 2600);
         }
 
-        // 切換頂部 4 大美食手帳分頁
+        // 切換頂部與手機底部 4 大美食手帳分頁
         function switchTab(tabName) {
             const tabs = ['wheel', 'pocket', 'pokedex', 'map'];
             tabs.forEach(t => {
                 const panel = document.getElementById(`tab-panel-${t}`);
                 const btn = document.getElementById(`tab-btn-${t}`);
+                const mBtn = document.getElementById(`m-tab-btn-${t}`);
                 if (panel) {
                     if (t === tabName) panel.classList.remove('hidden');
                     else panel.classList.add('hidden');
@@ -1435,6 +2166,10 @@
                 if (btn) {
                     if (t === tabName) btn.classList.add('active');
                     else btn.classList.remove('active');
+                }
+                if (mBtn) {
+                    if (t === tabName) mBtn.classList.add('active');
+                    else mBtn.classList.remove('active');
                 }
             });
 
@@ -1534,9 +2269,9 @@
             });
         };
 
-        // 處理並清洗餐廳資料 (完整保留原版邏輯)
+        // 處理並清洗餐廳資料 (完整保留原版邏輯 + 合併使用者自訂私房店家 + 點餐連結欄位)
         function processData(rawData, isFallback) {
-            stores = [];
+            baseSheetStores = [];
             const dayMap = {
                 'Monday': '星期一', 'Tuesday': '星期二', 'Wednesday': '星期三',
                 'Thursday': '星期四', 'Friday': '星期五', 'Saturday': '星期六', 'Sunday': '星期日'
@@ -1570,7 +2305,9 @@
                 if (row.meal_time_2) meals.push(row.meal_time_2.trim());
                 if (row.meal_time_3) meals.push(row.meal_time_3.trim());
 
-                stores.push({
+                const rawOrderLink = (row.order_link || row['點餐連結'] || row['線上點餐'] || '').trim();
+
+                baseSheetStores.push({
                     name: storeName,
                     type: row.type ? row.type.trim() : '其他',
                     price_level: parseInt(row['price_level (均消預算)']) || 100,
@@ -1585,18 +2322,20 @@
                     raw_closed_days: raw_closed,
                     lat: parseFloat(row['lat(緯度)']),
                     lng: parseFloat(row['lng(經度)']),
-                    map_link: row.map_link || ""
+                    map_link: row.map_link || "",
+                    order_link: rawOrderLink,
+                    isCustom: false
                 });
             });
 
-            // 依據真實經緯度進行微幅防重疊分散計算，讓同一條街上的小房子與地標自然散開不重疊
-            computeSpreadMapCoords(stores);
+            // 合併雲端店家與使用者新增的私房店家，並進行防重疊分散計算
+            rebuildMergedStores();
 
             // 更新頂部手繪同步狀態橫幅
             const statusDiv = document.getElementById('sync-status');
-            statusDiv.className = 'sumikko-card-sm px-4 py-2.5 bg-[#EAF6EE] flex items-center gap-2 text-xs sm:text-sm font-black self-stretch sm:self-auto justify-center';
+            statusDiv.className = 'sumikko-card-sm px-3.5 py-1.5 bg-[#EAF6EE] flex items-center gap-2 text-xs font-black self-stretch sm:self-auto justify-center';
             statusDiv.innerHTML = `
-                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="9" fill="#A8D8B9" stroke="#5C4938" stroke-width="2"/>
                     <path d="M8 12.5L10.8 15.2L16.2 9.5" stroke="#5C4938" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -1607,6 +2346,7 @@
             document.getElementById('wheel-center-btn').disabled = false;
 
             updateAllBadgesAndCounts();
+            updateEconomyUI();
 
             document.getElementById('result-area').innerHTML = `
                 <div class="flex flex-col items-center gap-2 py-2">
@@ -1888,6 +2628,13 @@
                 drawText.textContent = "再轉一次幸運盲盒！";
                 pointer.classList.remove('pointer-wiggle');
 
+                // 階段 A：檢查今日首次轉動盲盒獎勵 (+15 蝦米幣)
+                const todayStr = new Date().toISOString().slice(0, 10);
+                if (economyState.lastSpinRewardDate !== todayStr) {
+                    economyState.lastSpinRewardDate = todayStr;
+                    addShiamiCoins(15, '完成今日首次轉動幸運盲盒！');
+                }
+
                 const blindBox = BLIND_BOX_THEMES[sliceIndex];
                 lastDrawnStoreName = pick.name;
                 renderResultCard(pick, blindBox);
@@ -1914,11 +2661,12 @@
             return html;
         }
 
-        // 渲染抽中的餐廳結果卡片 (整合：口袋收藏按鈕、蝦米評鑑筆記、暫時躲進角落PASS、Leaflet 奶油互動地圖)
+        // 渲染抽中的餐廳結果卡片 (整合：口袋收藏按鈕、蝦米評鑑筆記、線上點餐連結、暫時躲進角落PASS、Leaflet 奶油互動地圖)
         function renderResultCard(pick, blindBox) {
             const isOpen = checkIsOpenNow(pick);
             const isFav = favoriteStores.includes(pick.name);
-            const review = storeReviews[pick.name] || { rating: 0, tags: [], note: '', stamped: false };
+            const review = storeReviews[pick.name] || { rating: 0, tags: [], note: '', orderLink: '', stamped: false };
+            const activeOrderLink = getStoreOrderLink(pick);
             const resultArea = document.getElementById('result-area');
 
             // 依據料理類型配置粉彩底色
@@ -1943,7 +2691,7 @@
                         </svg>
                     </div>` : ''}
 
-                    <!-- 抽中的角落盲盒主題小標籤 -->
+                    <!-- 抽中的盲盒主題小標籤 -->
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b-2 border-dashed border-[#E5DDD0]">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FCE8A6] text-[#5C4938] border-2 border-[#5C4938] text-xs sm:text-sm font-black">
                             <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none">
@@ -1958,7 +2706,7 @@
 
                     <!-- 餐廳名稱與口袋收藏愛心按鈕列 -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                        <div class="flex items-center gap-2.5">
+                        <div class="flex items-center gap-2.5 flex-wrap">
                             <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 36 36" fill="none">
                                 <path d="M18 6C27 6 32 18 30 28C28 33 23 34 18 34C13 34 8 33 6 28C4 18 9 6 18 6Z" fill="#FFFFFF" stroke="#5C4938" stroke-width="2"/>
                                 <circle cx="13.5" cy="21" r="1.5" fill="#5C4938"/>
@@ -1970,6 +2718,7 @@
                             <h3 class="font-hand text-2xl sm:text-3xl font-black text-[#5C4938] tracking-wide">
                                 ${pick.name}
                             </h3>
+                            ${pick.isCustom ? `<span class="px-2.5 py-0.5 rounded-full bg-[#A8D8B9] border-2 border-[#5C4938] text-xs font-black">私房新增</span>` : ''}
                         </div>
 
                         <!-- 互動按鈕組：收進口袋 + 寫評鑑蓋章 -->
@@ -2025,7 +2774,7 @@
                                     ${getFriedShrimpIconsHTML(review.rating, "w-5 h-5")}
                                 </div>
                                 <span class="text-xs font-bold text-[#857262]">
-                                    ${review.rating > 0 ? `${review.rating} 隻炸蝦！` : '（尚未評分，點上方按鈕新增）'}
+                                    ${review.rating > 0 ? `${review.rating} 隻炸蝦！` : '（尚未評分，點上方按鈕評鑑領 +30 蝦米幣）'}
                                 </span>
                             </div>
                         </div>
@@ -2084,25 +2833,45 @@
                         </div>
                     </div>` : ""}
 
-                    <!-- 底部行動按鈕列：開啟 Google 地圖導航 + 今日先蓋海苔被休息 (PASS重抽) -->
-                    <div class="flex flex-col sm:flex-row gap-3">
+                    <!-- 底部行動按鈕列：線上點餐直達車 + 開啟 Google 地圖導航 + 今日先蓋海苔被休息 (PASS重抽) -->
+                    <div class="flex flex-col sm:flex-row flex-wrap gap-2.5">
+                        ${activeOrderLink ? `
+                        <a href="${activeOrderLink}" target="_blank" rel="noopener noreferrer"
+                           class="flex-1 sumikko-card-sm bg-[#FCE8A6] hover:bg-[#F7A072] hover:text-white text-[#5C4938] font-black py-3 px-4 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 text-sm">
+                            <!-- 手繪手機點餐小圖示 SVG -->
+                            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                                <rect x="6" y="2" width="12" height="20" rx="3" fill="#FFFFFF" stroke="#5C4938" stroke-width="2"/>
+                                <path d="M9 7H15M9 11H15M9 15H12" stroke="#E87A64" stroke-width="2" stroke-linecap="round"/>
+                                <circle cx="12" cy="18.5" r="1" fill="#5C4938"/>
+                            </svg>
+                            <span>線上點餐免排隊</span>
+                        </a>` : `
+                        <button type="button" onclick="openReviewModal(decodeURIComponent('${encodedName}'))"
+                            class="sumikko-card-sm bg-[#FFFDF9] hover:bg-[#FCE8A6] text-[#857262] hover:text-[#5C4938] font-black py-3 px-3.5 flex items-center justify-center gap-1.5 transition text-xs">
+                            <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 4V16M4 10H16" stroke="#5C4938" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>補充點餐連結</span>
+                        </button>
+                        `}
+
                         ${pick.map_link ? `
                         <a href="${pick.map_link}" target="_blank" rel="noopener noreferrer"
                            class="flex-1 sumikko-card-sm bg-[#A8D8B9] hover:bg-[#95CCA8] text-[#5C4938] font-black py-3 px-4 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 text-sm">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                                 <path d="M3 11L21 3L13 21L11 13L3 11Z" fill="#FFFFFF" stroke="#5C4938" stroke-width="2" stroke-linejoin="round"/>
                             </svg>
-                            <span>開啟 Google 地圖導航</span>
+                            <span>開啟 Google 導航</span>
                         </a>` : ""}
 
                         <button type="button" onclick="hideStoreTodayAndRespin(decodeURIComponent('${encodedName}'))"
                             class="flex-1 sumikko-card-sm bg-[#D9C8EC] hover:bg-[#CBB5E4] text-[#5C4938] font-black py-3 px-4 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 text-sm">
                             <!-- 蓋海苔被休息 SVG -->
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                                 <path d="M12 4C18 4 21 11 20 18C19 21 15 22 12 22C9 22 5 21 4 18C3 11 6 4 12 4Z" fill="#FFFFFF" stroke="#5C4938" stroke-width="1.8"/>
                                 <path d="M4 14Q12 11 20 14L19 21Q12 23 5 21Z" fill="#5C4938"/>
                             </svg>
-                            <span>剛吃過，先蓋海苔被休息 (PASS重抽)</span>
+                            <span>先蓋海苔被休息 (PASS)</span>
                         </button>
                     </div>
                 </div>
@@ -2549,6 +3318,7 @@
             } else {
                 favGrid.innerHTML = favStoreObjs.map(s => {
                     const review = storeReviews[s.name] || { rating: 0, tags: [], note: '', stamped: false };
+                    const orderUrl = getStoreOrderLink(s);
                     const encodedName = encodeSafe(s.name);
                     return `
                         <div class="sumikko-card-sm bg-[#FFFDF9] p-4 flex flex-col justify-between gap-3">
@@ -2564,6 +3334,7 @@
                                 ${review.note ? `<p class="mt-2 text-xs font-bold text-[#5C4938] bg-[#FAF6F0] p-2 rounded-lg border border-[#DFD5C6]">筆記：${review.note}</p>` : ''}
                             </div>
                             <div class="flex flex-wrap gap-2 pt-2 border-t border-dashed border-[#EAE2D6]">
+                                ${orderUrl ? `<a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="capsule-btn text-xs py-1 px-3 bg-[#F9C5BD]">線上點餐</a>` : ''}
                                 <button type="button" onclick="viewStoreOnWheelCard(decodeURIComponent('${encodedName}'))" class="capsule-btn text-xs py-1 px-3 bg-[#A8D8B9]">查看地圖與詳情</button>
                                 <button type="button" onclick="openReviewModal(decodeURIComponent('${encodedName}'))" class="capsule-btn text-xs py-1 px-3 bg-[#FCE8A6]">編輯筆記</button>
                                 <button type="button" onclick="toggleFavorite(decodeURIComponent('${encodedName}'))" class="capsule-btn text-xs py-1 px-3 bg-white text-[#C45143]">移出口袋</button>
@@ -2602,17 +3373,23 @@
         // ==================== 功能 2：蝦米美味評鑑 ＆ 完食印章 Modal ====================
         function openReviewModal(storeName) {
             activeModalStoreName = storeName;
-            const existing = storeReviews[storeName] || { rating: 0, tags: [], note: '', stamped: false };
+            const storeObj = stores.find(s => s.name === storeName);
+            const existing = storeReviews[storeName] || { rating: 0, tags: [], note: '', orderLink: '', stamped: false };
+            const defaultOrder = existing.orderLink || (storeObj ? getStoreOrderLink(storeObj) : '');
+
             modalTempState = {
                 rating: existing.rating || 0,
                 tags: Array.isArray(existing.tags) ? [...existing.tags] : [],
                 note: existing.note || '',
+                orderLink: defaultOrder,
                 stamped: !!existing.stamped,
                 fav: favoriteStores.includes(storeName)
             };
 
             document.getElementById('modal-store-name').textContent = storeName;
             document.getElementById('modal-note-input').value = modalTempState.note;
+            const orderInput = document.getElementById('modal-order-link-input');
+            if (orderInput) orderInput.value = modalTempState.orderLink;
 
             renderModalControls();
 
@@ -2724,11 +3501,16 @@
         function saveStoreReview() {
             if (!activeModalStoreName) return;
             const noteVal = document.getElementById('modal-note-input').value.trim();
+            const orderLinkVal = (document.getElementById('modal-order-link-input')?.value || '').trim();
+
+            const prevReview = storeReviews[activeModalStoreName];
+            const isFirstTimeStampedOrReviewed = !prevReview || (!prevReview.stamped && !prevReview.note && !prevReview.rating);
 
             storeReviews[activeModalStoreName] = {
                 rating: modalTempState.rating,
                 tags: modalTempState.tags,
                 note: noteVal,
+                orderLink: orderLinkVal,
                 stamped: modalTempState.stamped,
                 updatedAt: new Date().toISOString().slice(0, 10)
             };
@@ -2745,7 +3527,12 @@
 
             const savedName = activeModalStoreName;
             closeReviewModal();
-            showSumikkoToast(`已儲存「${savedName}」的蝦米美食筆記！`);
+
+            if (isFirstTimeStampedOrReviewed) {
+                addShiamiCoins(30, `完成「${savedName}」的蝦米美味評鑑！`);
+            } else {
+                showSumikkoToast(`已更新「${savedName}」的蝦米美食筆記！`);
+            }
 
             // 同步更新各分頁畫面
             if (lastDrawnStoreName === savedName) {
@@ -2775,13 +3562,18 @@
         }
 
         function quickToggleStamp(storeName) {
-            const current = storeReviews[storeName] || { rating: 0, tags: [], note: '', stamped: false };
+            const current = storeReviews[storeName] || { rating: 0, tags: [], note: '', orderLink: '', stamped: false };
+            const wasStamped = !!current.stamped;
             current.stamped = !current.stamped;
             if (current.stamped && current.rating === 0) current.rating = 5;
             storeReviews[storeName] = current;
             saveReviewsToStorage();
             renderPokedex();
-            showSumikkoToast(current.stamped ? `啪嚓！已為「${storeName}」蓋上完食認證章！` : `已取消「${storeName}」的完食印章`);
+            if (!wasStamped && current.stamped) {
+                addShiamiCoins(30, `啪嚓！已為「${storeName}」蓋上完食認證章！`);
+            } else {
+                showSumikkoToast(`已取消「${storeName}」的完食印章`);
+            }
         }
 
         function renderPokedex() {
@@ -2813,6 +3605,7 @@
                 if (pokedexFilterMode === 'stamped' && !isStamped) return false;
                 if (pokedexFilterMode === 'unstamped' && isStamped) return false;
                 if (pokedexFilterMode === 'fav' && !isFav) return false;
+                if (pokedexFilterMode === 'custom' && !s.isCustom) return false;
 
                 if (keyword) {
                     return s.name.toLowerCase().includes(keyword) || s.type.toLowerCase().includes(keyword);
@@ -2823,7 +3616,7 @@
             if (list.length === 0) {
                 grid.innerHTML = `
                     <div class="col-span-full sumikko-card-sm bg-white p-8 text-center text-sm font-bold text-[#857262]">
-                        沒有找到符合條件的圖鑑卡片喔！試著切換篩選按鈕或清空搜尋關鍵字吧～
+                        沒有找到符合條件的圖鑑卡片喔！試著切換篩選按鈕或點右上角「+ 新增好店」吧～
                     </div>
                 `;
                 return;
@@ -2832,6 +3625,7 @@
             grid.innerHTML = list.map(s => {
                 const rev = storeReviews[s.name] || { rating: 0, tags: [], note: '', stamped: false };
                 const isFav = favoriteStores.includes(s.name);
+                const orderUrl = getStoreOrderLink(s);
                 const encodedName = encodeSafe(s.name);
 
                 return `
@@ -2846,10 +3640,11 @@
                         </div>` : ''}
 
                         <div>
-                            <div class="flex items-center gap-1.5 mb-1">
+                            <div class="flex flex-wrap items-center gap-1.5 mb-1">
                                 <span class="px-2 py-0.5 rounded-full bg-[#FAF6F0] border border-[#5C4938] text-[11px] font-black">${s.type}</span>
                                 <span class="px-2 py-0.5 rounded-full bg-[#FAF6F0] border border-[#5C4938] text-[11px] font-black">~${s.price_level}元</span>
                                 ${isFav ? `<span class="px-2 py-0.5 rounded-full bg-[#F9C5BD] border border-[#5C4938] text-[11px] font-black">口袋最愛</span>` : ''}
+                                ${s.isCustom ? `<span class="px-2 py-0.5 rounded-full bg-[#A8D8B9] border border-[#5C4938] text-[11px] font-black">私房新增</span>` : ''}
                             </div>
                             <h3 class="font-hand text-xl font-black text-[#5C4938] pr-12">${s.name}</h3>
 
@@ -2866,14 +3661,16 @@
                             ${rev.note ? `<p class="mt-2 text-xs font-bold text-[#5C4938] bg-[#FAF6F0] p-2 rounded-lg border border-[#DFD5C6] line-clamp-2">「${rev.note}」</p>` : ''}
                         </div>
 
-                        <div class="flex items-center justify-between gap-2 pt-2.5 border-t border-dashed border-[#EAE2D6]">
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-dashed border-[#EAE2D6]">
                             <button type="button" onclick="quickToggleStamp(decodeURIComponent('${encodedName}'))"
                                 class="capsule-btn text-xs py-1 px-3 ${rev.stamped ? 'bg-[#A8D8B9]' : 'bg-white'}">
-                                <span>${rev.stamped ? '已蓋完食章' : '蓋上完食章'}</span>
+                                <span>${rev.stamped ? '已蓋完食章' : '蓋章 (+30幣)'}</span>
                             </button>
                             <div class="flex items-center gap-1.5">
+                                ${orderUrl ? `<a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="capsule-btn text-xs py-1 px-2.5 bg-[#F9C5BD]" title="線上點餐">點餐</a>` : ''}
                                 <button type="button" onclick="openReviewModal(decodeURIComponent('${encodedName}'))" class="capsule-btn text-xs py-1 px-2.5 bg-[#FCE8A6]">寫評鑑</button>
                                 <button type="button" onclick="viewStoreOnWheelCard(decodeURIComponent('${encodedName}'))" class="capsule-btn text-xs py-1 px-2.5 bg-white">地圖</button>
+                                ${s.isCustom ? `<button type="button" onclick="deleteCustomStore(decodeURIComponent('${encodedName}'))" class="capsule-btn text-xs py-1 px-2 bg-white text-[#C45143]" title="刪除此私房店家">刪除</button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -2939,8 +3736,10 @@
                     zIndexOffset: isSelected ? 900 : (isFav ? 400 : 100)
                 }).addTo(fullMapMarkersLayer);
 
+                const orderUrl = getStoreOrderLink(s);
+
                 marker.bindPopup(`
-                    <div class="p-1.5 min-w-[180px]">
+                    <div class="p-1.5 min-w-[190px]">
                         <div class="flex items-center justify-between gap-1">
                             <span class="text-xs font-black text-[#E87A64]">${s.type} · 均消 ~${s.price_level}元</span>
                             ${isFav ? `<span class="px-1.5 py-0.2 rounded-full bg-[#F9C5BD] border border-[#5C4938] text-[10px] font-black">口袋最愛</span>` : ''}
@@ -2951,6 +3750,7 @@
                             <button type="button" onclick="selectStoreOnFullMap(decodeURIComponent('${encodedName}'))" class="px-2.5 py-1 rounded-full bg-[#BBE2F2] border border-[#5C4938] text-[11px] font-black">設為選中地標</button>
                             <button type="button" onclick="openReviewModal(decodeURIComponent('${encodedName}'))" class="px-2.5 py-1 rounded-full bg-[#FCE8A6] border border-[#5C4938] text-[11px] font-black">評鑑蓋章</button>
                             <button type="button" onclick="viewStoreOnWheelCard(decodeURIComponent('${encodedName}'))" class="px-2.5 py-1 rounded-full bg-[#A8D8B9] border border-[#5C4938] text-[11px] font-black">查看詳情</button>
+                            ${orderUrl ? `<a href="${orderUrl}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-full bg-[#F9C5BD] border border-[#5C4938] text-[11px] font-black text-[#5C4938]">線上點餐</a>` : ''}
                         </div>
                     </div>
                 `);
